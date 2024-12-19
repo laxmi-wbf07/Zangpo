@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiritual Wisdom Companion</title>
+    <style>
+        :root {
+            --primary-color: #4B7F4E;
+            --secondary-color: #6A8CAF;
+            --background-color: #F4F7F6;
+            --text-color: #2C3E50;
+            --meditation-color: #D1E8E0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: linear-gradient(to bottom right, rgba(255,255,255,0.8), rgba(209,232,224,0.3));
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid rgba(109, 179, 142, 0.2);
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header h1 {
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .chat-window {
+            height: 450px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #fbfbfb;
+            display: flex;
+            flex-direction: column;
+            scrollbar-width: thin;
+            scrollbar-color: var(--secondary-color) transparent;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            align-self: flex-start;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .user-message {
+            background-color: var(--secondary-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background-color: var(--meditation-color);
+            color: var(--text-color);
+            border-bottom-left-radius: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 25px;
+            margin-right: 10px;
+            font-style: italic;
+            outline: none;
+        }
+
+        #send-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #send-btn:hover {
+            background-color: #3A6E3E;
+        }
+
+        .error-log {
+            background-color: #FFF5E6;
+            color: #8B4513;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #D2691E;
+            display: none;
+        }
+
+        .reflection-area {
+            padding: 20px;
+            background-color: #F0F4F8;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .loading {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Spiritual Wisdom Companion 🙏</h1>
+        </div>
+        <div id="chat-window" class="chat-window"></div>
+        <div class="error-log" id="error-log"></div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Whisper your inner thoughts...">
+            <button id="send-btn">Reflect</button>
+        </div>
+        <div id="reflection-area" class="reflection-area">
+            Sacred space for mindful contemplation
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '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';
+        const API_URL = 'https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct';
+
+        const SPIRITUAL_FRAMEWORK = `
+CORE SPIRITUAL PRINCIPLES:
+1. Embrace the Dharma of Compassion
+   - All suffering stems from attachment and ignorance
+   - Cultivate loving-kindness (Metta) in every interaction
+   - See the interconnectedness of all beings
+
+2. Practice Mindful Awareness
+   - Be fully present in each moment
+   - Observe thoughts without judgment
+   - Recognize the impermanent nature of experiences
+
+3. Path of Enlightened Well-being
+   - Seek inner peace through self-understanding
+   - Transform challenges into opportunities for growth
+   - Balance spiritual wisdom with practical compassion
+
+4. Holistic Wellness Approach
+   - Nurture body, mind, and spirit equally
+   - Practice non-violence (Ahimsa) in thought and action
+   - Cultivate gratitude and acceptance
+
+COMMUNICATION GUIDELINES:
+- Respond with deep empathy and understanding
+- Unless the user specifies, always answer in short, step-by-step process for users to follow easily
+- Use gentle, compassionate language
+- Encourage self-reflection and inner wisdom
+- Offer guidance without attachment to outcomes
+- Embody the principles of loving-kindness and mindfulness
+`;
+
+        const BUDDHIST_MEDITATION_PHRASES = [
+            "May all beings be free from suffering.",
+            "Breathe. Be present. Let go.",
+            "Compassion is the path to understanding.",
+            "Your thoughts are clouds passing through the sky of consciousness.",
+            "Peace comes from within. Do not seek it without.",
+            "Wisdom is found in stillness.",
+            "Observe your thoughts, but do not become them."
+        ];
+
+        const SPIRITUAL_REFLECTIONS = [
+            "Inner peace is the greatest wealth.",
+            "Compassion begins with understanding yourself.",
+            "Every moment is an opportunity for awakening.",
+            "True wisdom lies in accepting what is.",
+            "Mindfulness transforms suffering into understanding."
+        ];
+
+        const conversationHistory = [];
+
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const reflectionArea = document.getElementById('reflection-area');
+        const errorLog = document.getElementById('error-log');
+
+        function addMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.innerHTML = formatMessageWithSpirit(message);
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function formatMessageWithSpirit(message) {
+            const spiritualEmojis = ['🕉️', '🙏', '✨', '🌿', '🌈', '☮️'];
+            const randomEmoji = spiritualEmojis[Math.floor(Math.random() * spiritualEmojis.length)];
+            return `${randomEmoji} ${message}`;
+        }
+
+        function addUserMessage(message) {
+            addMessage(message, 'user-message');
+        }
+
+        function addBotMessage(message) {
+            addMessage(message, 'bot-message');
+        }
+
+        function addLoadingIndicator() {
+            const loadingElement = document.createElement('div');
+            loadingElement.classList.add('message', 'bot-message', 'loading');
+            loadingElement.textContent = 'Contemplating deeply...';
+            chatWindow.appendChild(loadingElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return loadingElement;
+        }
+
+        function removeLoadingIndicator(loadingElement) {
+            if (loadingElement) {
+                chatWindow.removeChild(loadingElement);
+            }
+        }
+
+        function logError(message, details = '') {
+            const compassionateMessage = [
+                "A gentle pause in our connection...",
+                "The path of wisdom sometimes includes challenges...",
+                "Breathe. Even errors can be teachers..."
+            ];
+            
+            const randomCompassionateMessage = compassionateMessage[Math.floor(Math.random() * compassionateMessage.length)];
+            
+            errorLog.innerHTML = `🕊️ ${randomCompassionateMessage}<br>${message} ${details}`;
+            errorLog.style.display = 'block';
+            console.error(`Spiritual Companion Reflection: ${message}`, details);
+        }
+
+        function clearErrorLog() {
+            errorLog.textContent = '';
+            errorLog.style.display = 'none';
+        }
+
+        function generateSpiritualReflection() {
+            const randomReflection = SPIRITUAL_REFLECTIONS[Math.floor(Math.random() * SPIRITUAL_REFLECTIONS.length)];
+            const randomMeditationPhrase = BUDDHIST_MEDITATION_PHRASES[Math.floor(Math.random() * BUDDHIST_MEDITATION_PHRASES.length)];
+            
+            reflectionArea.innerHTML = `
+                <h3>🌿 Moment of Mindfulness 🌿</h3>
+                <p><em>"${randomReflection}"</em></p>
+                <small>~ ${randomMeditationPhrase}</small>
+            `;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            clearErrorLog();
+            addUserMessage(message);
+            userInput.value = '';
+
+            const loadingIndicator = addLoadingIndicator();
+
+            try {
+                const fullPrompt = `${SPIRITUAL_FRAMEWORK}
+
+You are a compassionate spiritual companion embodying Buddhist wisdom and holistic well-being.
+
+Previous Reflections:
+${conversationHistory.map(entry => `${entry.role}: ${entry.content}`).join('\n')}
+
+Respond with deep compassion, spiritual insight, and gentle wisdom. Help the seeker find inner peace and understanding.
+
+User's Inquiry: ${message}
+Spiritual Companion's Compassionate Response:`;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: fullPrompt,
+                        parameters: {
+                            max_new_tokens: 250,
+                            temperature: 0.6,
+                            return_full_text: false
+                        }
+                    })
+                });
+
+                removeLoadingIndicator(loadingIndicator);
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    logError(`Momentary Spiritual Interruption`, errorBody);
+                    throw new Error(`Connection to inner wisdom temporarily obscured`);
+                }
+
+                const data = await response.json();
+                
+                const botResponse = data[0]?.generated_text || 
+                    data?.generated_text ||
+                    "In the silence between thoughts, wisdom resides. Breathe and be present.";
+
+                addBotMessage(botResponse);
+
+                conversationHistory.push(
+                    { role: "user", content: message },
+                    { role: "assistant", content: botResponse }
+                );
+
+                if (conversationHistory.length > 10) {
+                    conversationHistory.splice(0, 2);
+                }
+
+                generateSpiritualReflection();
+
+            } catch (error) {
+                removeLoadingIndicator(loadingIndicator);
+                logError('A gentle pause in our spiritual connection', error.message);
+                addBotMessage("Let us breathe together. Our inner wisdom transcends temporary obstacles.");
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function initializeSpirit() {
+            addBotMessage("Kuzuzangpo La, I am your Spiritual Companion, here to support your journey of inner awakening and holistic well-being. How may I nurture your path to understanding today?");
+            generateSpiritualReflection();
+        }
+
+        initializeSpirit();
+    </script>
+</body>
+</html>
